@@ -1,26 +1,327 @@
 @import "tailwindcss";
 
+/* =============================================================================
+   CSS Custom Properties — Theme defaults
+   These are overridden at runtime by buildCssVariables() using the
+   theme_config JSONB from Supabase.
+   ============================================================================= */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    /* Colours */
+    --theme-color-primary: #ff69b4;
+    --theme-color-secondary: #ffb6c1;
+    --theme-color-background: #fff0f5;
+    --theme-color-text: #3d003d;
+    --theme-color-accent: #ff1493;
+    --theme-color-card-border: #ffb6c1;
+    --theme-color-card-bg: rgba(255, 255, 255, 0.9);
+
+    /* Typography */
+    --theme-font-family: "Poppins", sans-serif;
+    --theme-font-size-base: 1.1rem;
+    --theme-font-size-section-title: 2.5rem;
+    --theme-font-size-product-title: 1.4rem;
+
+    /* Layout */
+    --theme-card-border-radius: 20px;
+    --theme-grid-min-col: 300px;
+    --theme-grid-gap: 2rem;
+    --theme-max-width: 1400px;
+    --theme-container-padding: 1rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* =============================================================================
+   Base layer overrides
+   ============================================================================= */
+
+@layer base {
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        font-family: var(--theme-font-family);
+        font-size: var(--theme-font-size-base);
+        color: var(--theme-color-text);
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* =============================================================================
+   Component layer — reusable patterns for the totem view
+   ============================================================================= */
+
+@layer components {
+    /* ---------------------------------------------------------------------------
+     Totem page: schema-driven grid for product cards
+     --------------------------------------------------------------------------- */
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(var(--theme-grid-min-col), 1fr)
+        );
+        gap: var(--theme-grid-gap);
+        padding: 1rem;
+    }
+
+    /* ---------------------------------------------------------------------------
+     Product card — base styles, enhanced by theme variables at runtime
+     --------------------------------------------------------------------------- */
+    .product-card {
+        background: var(--theme-color-card-bg);
+        border: 2px solid var(--theme-color-card-border);
+        border-radius: var(--theme-card-border-radius);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        padding: 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(255, 105, 180, 0.3);
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .product-card:hover {
+        transform: translateY(-10px) scale(1.03);
+        box-shadow: 0 15px 40px rgba(255, 105, 180, 0.4);
+    }
+
+    .product-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            135deg,
+            var(--theme-color-secondary) 0%,
+            var(--theme-color-primary) 100%
+        );
+        opacity: 0;
+        z-index: -1;
+        transition: opacity 0.3s ease;
+    }
+
+    .product-card:hover::before {
+        opacity: 0.1;
+    }
+
+    /* ---------------------------------------------------------------------------
+     Section title — gradient banner with shimmer animation
+     --------------------------------------------------------------------------- */
+    .section-title-banner {
+        background: linear-gradient(
+            135deg,
+            var(--theme-color-primary) 0%,
+            var(--theme-color-accent) 100%
+        );
+        color: white;
+        border-radius: 25px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(255, 105, 180, 0.3);
+    }
+
+    .section-title-banner::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.1) 0%,
+            transparent 70%
+        );
+        animation: shimmer 3s ease-in-out infinite;
+    }
+
+    /* ---------------------------------------------------------------------------
+     Nav pill button
+     --------------------------------------------------------------------------- */
+    .nav-pill-btn {
+        background: linear-gradient(
+            135deg,
+            var(--theme-color-secondary) 0%,
+            var(--theme-color-primary) 100%
+        );
+        border: none;
+        color: white;
+        border-radius: 50px;
+        font-weight: 600;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(255, 105, 180, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .nav-pill-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent
+        );
+        transition: left 0.5s ease;
+    }
+
+    .nav-pill-btn:hover::before {
+        left: 100%;
+    }
+
+    .nav-pill-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(255, 105, 180, 0.4);
+    }
+
+    /* ---------------------------------------------------------------------------
+     Category badge on product cards
+     --------------------------------------------------------------------------- */
+    .category-badge {
+        display: inline-block;
+        background: linear-gradient(
+            135deg,
+            var(--theme-color-secondary) 0%,
+            var(--theme-color-primary) 100%
+        );
+        color: white;
+        padding: 0.3rem 1rem;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.75rem;
+    }
+
+    /* ---------------------------------------------------------------------------
+     Animated background dot pattern (body::before equivalent)
+     --------------------------------------------------------------------------- */
+    .bg-dot-pattern {
+        position: fixed;
+        inset: 0;
+        background-image: radial-gradient(
+            circle,
+            var(--theme-color-primary) 1px,
+            transparent 1px
+        );
+        background-size: 20px 20px;
+        opacity: 0.07;
+        pointer-events: none;
+        z-index: 0;
+    }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* =============================================================================
+   Utility layer — custom utilities not in Tailwind's core
+   ============================================================================= */
+
+@layer utilities {
+    /* Fade-in-up animation utility */
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease forwards;
+    }
+
+    /* Stagger helpers for list items */
+    .stagger-1 {
+        animation-delay: 0.1s;
+    }
+    .stagger-2 {
+        animation-delay: 0.2s;
+    }
+    .stagger-3 {
+        animation-delay: 0.3s;
+    }
+    .stagger-4 {
+        animation-delay: 0.4s;
+    }
+    .stagger-5 {
+        animation-delay: 0.5s;
+    }
+
+    /* Totem-optimised scrollbar */
+    .totem-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .totem-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .totem-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--theme-color-primary);
+        border-radius: 999px;
+    }
+}
+
+/* =============================================================================
+   Keyframe definitions
+   ============================================================================= */
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotate(180deg);
+    }
+}
+
+@keyframes shimmer {
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+    50% {
+        transform: rotate(180deg);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =============================================================================
+   Admin panel base overrides
+   Scoped to .admin-layout to avoid bleeding into the public totem view.
+   ============================================================================= */
+
+.admin-layout {
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    color: #1a1a2e;
 }
