@@ -121,7 +121,7 @@ export default function RegisterPage() {
             htmlFor="establishment-name"
             className="block text-sm font-medium text-[#3D003D]/80 mb-1"
           >
-            Nome do seu bar / estabelecimento
+            Nome do seu bar / cardápio
           </label>
           <input
             id="establishment-name"
