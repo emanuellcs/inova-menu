@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { Item, ThemeConfig } from "@/types/database";
 import { formatPrice } from "@/lib/utils";
 import { ProductModal } from "@/components/totem/ProductModal";
+import { Star } from "lucide-react";
 
 interface ProductCardProps {
   item: Item;
@@ -49,7 +50,7 @@ export function ProductCard({ item, theme, index }: ProductCardProps) {
   return (
     <>
       <article
-        className="product-card animate-fade-in-up"
+        className="product-card animate-fade-in-up group"
         style={{
           background: cardBackground,
           borderColor: `var(--theme-color-card-border)`,
@@ -61,7 +62,12 @@ export function ProductCard({ item, theme, index }: ProductCardProps) {
           cursor: "pointer",
         }}
         onClick={() => setIsModalOpen(true)}
-        onKeyDown={(e) => e.key === "Enter" && setIsModalOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsModalOpen(true);
+          }
+        }}
         onTouchStart={() => setIsPressed(true)}
         onTouchEnd={() => {
           setTimeout(() => setIsPressed(false), 150);
@@ -70,15 +76,17 @@ export function ProductCard({ item, theme, index }: ProductCardProps) {
         role="button"
         aria-label={`Ver detalhes de ${item.name}`}
       >
+
         {/* Featured badge */}
         {item.is_featured && (
           <div
-            className="absolute top-3 right-3 text-xs font-bold px-2 py-1 rounded-full text-white"
+            className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full text-white flex items-center gap-1 z-20 shadow-sm"
             style={{
               background: `linear-gradient(135deg, ${colors.accent} 0%, ${colors.primary} 100%)`,
             }}
           >
-            ⭐ Destaque
+            <Star className="w-3 h-3 fill-current" aria-hidden="true" />
+            <span>DESTAQUE</span>
           </div>
         )}
 

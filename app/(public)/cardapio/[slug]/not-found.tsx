@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Martini } from "lucide-react";
 
 export default function TotemNotFound() {
   return (
@@ -10,14 +11,16 @@ export default function TotemNotFound() {
         fontFamily: "Poppins, sans-serif",
       }}
     >
-      <div className="text-8xl animate-bounce">🍹</div>
+      <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg animate-bounce">
+        <Martini className="w-12 h-12 text-[#FF69B4]" />
+      </div>
       <h1 className="text-4xl font-bold">Cardápio não encontrado</h1>
       <p className="text-lg opacity-70 max-w-sm">
         Este link pode estar incorreto ou o cardápio pode estar inativo.
       </p>
       <Link
         href="/"
-        className="nav-pill-btn px-8 py-3 text-base font-semibold inline-block"
+        className="nav-pill-btn px-8 py-3 text-base font-semibold inline-block transition-transform active:scale-95"
         style={{
           background: "linear-gradient(135deg, #FF69B4 0%, #FF1493 100%)",
           color: "white",

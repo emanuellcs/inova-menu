@@ -54,7 +54,7 @@ export async function updateSession(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (isAuthRoute && user) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/admin";
+    redirectUrl.pathname = "/admin/dashboard";
     return NextResponse.redirect(redirectUrl);
   }
 

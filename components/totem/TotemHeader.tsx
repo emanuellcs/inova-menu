@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ThemeConfig } from "@/types/database";
+import { Martini } from "lucide-react";
 
 interface TotemHeaderProps {
   theme: ThemeConfig;
@@ -10,7 +11,7 @@ interface TotemHeaderProps {
  *
  * Features driven by theme_config.header:
  * - showLogo: toggles the circular logo image
- * - logoUrl: the CDN URL for the logo (falls back to emoji placeholder)
+ * - logoUrl: the CDN URL for the logo (falls back to Lucide icon placeholder)
  * - title / subtitle: text rendered inside the banner
  * - backgroundType / backgroundValue: gradient, image, or solid colour
  * - showAnimatedBackground: the floating radial gradient animation
@@ -74,9 +75,7 @@ export function TotemHeader({ theme }: TotemHeaderProps) {
                 sizes="96px"
               />
             ) : (
-              <span role="img" aria-label="Logo">
-                🍹
-              </span>
+              <Martini className="w-12 h-12 text-white/90" aria-hidden="true" />
             )}
           </div>
         )}

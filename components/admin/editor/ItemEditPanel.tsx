@@ -4,31 +4,42 @@ import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { useEditorStore } from "@/store/editorStore";
 import { updateItem } from "@/lib/actions";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import type { Item } from "@/types/database";
 
 interface ItemEditPanelProps {
+  /** The item entity being edited. */
   item: Item;
+  /** The ID of the section that contains this item. */
   sectionId: string;
 }
 
 /**
- * ItemEditPanel — right panel that appears when an item is selected.
- * Changes are reflected immediately in the Zustand store (optimistic)
- * and persisted to Supabase with a 600ms debounce per field.
+ * Sidebar panel for editing the details of a specific product item.
+ * Implements optimistic updates in the global store and debounced persistence to the database.
  */
 export function ItemEditPanel({ item, sectionId }: ItemEditPanelProps) {
-  const { updateItem: storeUpdate, setSelectedItem } = useEditorStore();
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const { updateItem: storeUpdate, setSelectedItem, menu } = useEditorStore();
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
-  // Clean up timer on unmount
-  useEffect(() => () => clearTimeout(saveTimer.current), []);
+  /**
+   * Cleanup the debounce timer on component unmount to prevent memory leaks or delayed errors.
+   */
+  useEffect(() => () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+  }, []);
 
+  /**
+   * Handles changes to item fields, updating the local store immediately and debouncing the database update.
+   * @param key The item property to update.
+   * @param value The new value for the property.
+   */
   function handleChange<K extends keyof Item>(key: K, value: Item[K]) {
     // 1. Update store immediately (optimistic)
     storeUpdate(sectionId, item.id, { [key]: value } as Partial<Item>);
 
     // 2. Debounce DB persist
-    clearTimeout(saveTimer.current);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
       const { error } = await updateItem(item.id, {
         [key]: value,
@@ -37,15 +48,19 @@ export function ItemEditPanel({ item, sectionId }: ItemEditPanelProps) {
     }, 600);
   }
 
+  /**
+   * Specifically handles updates to the nested modal configuration object.
+   * @param key The key within modal_config to update.
+   * @param value The new value.
+   */
   function handleModalConfigChange(key: string, value: any) {
     const newConfig = { ...(item.modal_config ?? {}), [key]: value };
     handleChange("modal_config", newConfig as any);
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+    <div className="flex flex-col h-full bg-white">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white sticky top-0 z-10">
         <h3 className="font-bold text-gray-900 text-sm truncate">
           Editar item
         </h3>
@@ -71,7 +86,6 @@ export function ItemEditPanel({ item, sectionId }: ItemEditPanelProps) {
         </button>
       </div>
 
-      {/* Form */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         <Field label="Nome">
           <input
@@ -82,6 +96,32 @@ export function ItemEditPanel({ item, sectionId }: ItemEditPanelProps) {
             placeholder="Nome do produto"
           />
         </Field>
+
+        <Field label="Preço (R$)">
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={item.price ?? ""}
+            onChange={(e) =>
+              handleChange(
+                "price",
+                e.target.value ? parseFloat(e.target.value) : null,
+              )
+            }
+            className={inputCls}
+            placeholder="Ex: 29.90"
+          />
+        </Field>
+
+        {menu && (
+          <ImageUpload
+            establishmentId={menu.establishment_id}
+            value={item.image_url}
+            onChange={(url) => handleChange("image_url", url || null)}
+            label="Imagem do produto"
+          />
+        )}
 
         <Field label="Badge de categoria">
           <input
@@ -129,53 +169,24 @@ export function ItemEditPanel({ item, sectionId }: ItemEditPanelProps) {
           />
         </Field>
 
-        <Field label="Preço (R$)">
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={item.price ?? ""}
-            onChange={(e) =>
-              handleChange(
-                "price",
-                e.target.value ? parseFloat(e.target.value) : null,
-              )
-            }
-            className={inputCls}
-            placeholder="Ex: 29.90"
-          />
-        </Field>
-
-        <Field label="URL da imagem">
-          <input
-            type="url"
-            value={item.image_url ?? ""}
-            onChange={(e) => handleChange("image_url", e.target.value || null)}
-            className={inputCls}
-            placeholder="https://…"
-          />
-        </Field>
-
-        {/* Toggles */}
-        <div className="space-y-3 pt-2 border-t border-gray-100">
+        <div className="space-y-3 pt-4 border-t border-gray-100">
           <Toggle
             label="Disponível"
             checked={item.is_available}
             onChange={(v) => handleChange("is_available", v)}
           />
           <Toggle
-            label="Destaque"
+            label="Destaque (Estrela no card)"
             checked={item.is_featured}
             onChange={(v) => handleChange("is_featured", v)}
           />
         </div>
 
-        {/* Modal settings */}
-        <div className="pt-2 border-t border-gray-100 space-y-3">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            Modal de detalhes
+        <div className="pt-4 border-t border-gray-100 space-y-3">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+            Configuração do Modal
           </p>
-          <Field label="Ícone do modal (Font Awesome)">
+          <Field label="Ícone do modal">
             <input
               type="text"
               value={item.modal_config?.iconClass ?? "fas fa-cocktail"}
@@ -187,12 +198,12 @@ export function ItemEditPanel({ item, sectionId }: ItemEditPanelProps) {
             />
           </Field>
           <Toggle
-            label="Mostrar ingredientes no modal"
+            label="Mostrar ingredientes"
             checked={item.modal_config?.showIngredients ?? true}
             onChange={(v) => handleModalConfigChange("showIngredients", v)}
           />
           <Toggle
-            label="Mostrar preço no modal"
+            label="Mostrar preço"
             checked={item.modal_config?.showPrice ?? true}
             onChange={(v) => handleModalConfigChange("showPrice", v)}
           />
@@ -202,15 +213,14 @@ export function ItemEditPanel({ item, sectionId }: ItemEditPanelProps) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Local helpers
-// ---------------------------------------------------------------------------
-
 const inputCls =
   "w-full px-3 py-2 text-sm rounded-xl border border-gray-200 text-gray-900 " +
   "focus:outline-none focus:border-[#FF69B4] focus:ring-2 focus:ring-[#FF69B4]/15 " +
   "transition-all duration-200 bg-white";
 
+/**
+ * Visual field wrapper with a label.
+ */
 function Field({
   label,
   children,
@@ -228,6 +238,9 @@ function Field({
   );
 }
 
+/**
+ * Reusable toggle switch for boolean fields.
+ */
 function Toggle({
   label,
   checked,

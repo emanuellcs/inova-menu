@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
+import type { Profile } from "@/types/database";
 
 export const metadata: Metadata = {
   title: {
@@ -25,11 +26,13 @@ export default async function AdminLayout({
   if (!user) redirect("/entrar");
 
   // Fetch profile for display in sidebar
-  const { data: profile } = await supabase
+  const { data: profileData } = await supabase
     .from("profiles")
     .select("full_name, avatar_url")
     .eq("id", user.id)
     .single();
+
+  const profile = profileData as Profile | null;
 
   // Fetch establishment name
   const { data: membership } = await supabase
@@ -47,13 +50,18 @@ export default async function AdminLayout({
       {/* Sidebar */}
       <AdminSidebar
         userName={profile?.full_name ?? user.email ?? "Usuário"}
-        establishmentName={establishment?.name ?? "Meu Cardápio"}
+        establishmentName={establishment?.name ?? "Meu Estabelecimento"}
         establishmentSlug={establishment?.slug ?? ""}
       />
 
       {/* Main content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        <AdminTopbar userName={profile?.full_name ?? user.email ?? "Usuário"} />
+        <AdminTopbar
+          userName={profile?.full_name ?? user.email ?? "Usuário"}
+          userEmail={user.email ?? undefined}
+          establishmentName={establishment?.name ?? "Meu Estabelecimento"}
+          establishmentSlug={establishment?.slug ?? ""}
+        />
         <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
       </div>
     </div>

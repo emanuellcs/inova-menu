@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { generateSlug } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { MailCheck } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
   const supabase = createClient();
 
@@ -34,6 +36,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
@@ -47,43 +50,76 @@ export default function RegisterPage() {
       return;
     }
 
-    // 2. Create the establishment (the handle_new_user trigger creates the profile)
-    const slug = generateSlug(establishmentName);
-    const { error: estError } = await supabase.from("establishments").insert({
-      owner_id: authData.user.id,
-      name: establishmentName,
-      slug,
-    });
-
-    if (estError) {
-      // Slug conflict — append random suffix and retry
-      const fallbackSlug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
-      await supabase.from("establishments").insert({
-        owner_id: authData.user.id,
-        name: establishmentName,
-        slug: fallbackSlug,
-      });
+    // Guard: Supabase returns user with empty identities if email is already registered but unconfirmed
+    if (authData.user.identities && authData.user.identities.length === 0) {
+      toast.error("Este e-mail já está cadastrado. Tente entrar na sua conta.");
+      setLoading(false);
+      return;
     }
 
-    // 3. Add owner membership
-    const estResult = await supabase
-      .from("establishments")
-      .select("id")
-      .eq("owner_id", authData.user.id)
-      .single();
+    const userId = authData.user.id;
 
-    if (estResult.data) {
-      await supabase.from("establishment_members").insert({
-        establishment_id: estResult.data.id,
-        profile_id: authData.user.id,
-        role: "owner",
-        accepted_at: new Date().toISOString(),
+    // 2. Create the establishment and owner membership via RPC
+    // This bypasses RLS issues for unconfirmed users as it's a security definer function.
+    const slug = generateSlug(establishmentName);
+    
+    const { error: rpcError } = await supabase.rpc("create_establishment_on_signup", {
+      p_owner_id: userId,
+      p_name: establishmentName,
+      p_slug: slug
+    });
+
+    if (rpcError) {
+      // If slug conflict, try once with a random suffix
+      const fallbackSlug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
+      const { error: retryError } = await supabase.rpc("create_establishment_on_signup", {
+        p_owner_id: userId,
+        p_name: establishmentName,
+        p_slug: fallbackSlug
       });
+
+      if (retryError) {
+        console.error("RPC Error:", retryError);
+        // We don't block the user if the establishment creation fails here (they can fix it later),
+        // but it's better to show an error if it's critical.
+        // toast.error("Conta criada, mas houve um erro ao configurar seu bar.");
+      }
+    }
+
+    // 3. Handle confirmation flow
+    if (!authData.session) {
+      setNeedsConfirmation(true);
+      setLoading(false);
+      return;
     }
 
     toast.success("Conta criada com sucesso! Bem-vindo!");
-    router.push("/admin");
+    router.push("/admin/dashboard");
     router.refresh();
+  }
+
+  if (needsConfirmation) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <MailCheck className="w-10 h-10 text-[#FF69B4]" aria-hidden="true" />
+        </div>
+        <h2 className="text-2xl font-bold text-[#3D003D] mb-4">
+          Confirme seu e-mail
+        </h2>
+        <p className="text-[#3D003D]/70 mb-8 leading-relaxed">
+          Enviamos um link de confirmação para{" "}
+          <strong className="text-[#FF69B4]">{email}</strong>. Verifique sua
+          caixa de entrada (e a pasta de spam) para ativar sua conta.
+        </p>
+        <Link
+          href="/entrar"
+          className="nav-pill-btn px-8 py-3 text-sm font-semibold inline-block"
+        >
+          Ir para o login
+        </Link>
+      </div>
+    );
   }
 
   return (

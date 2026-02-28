@@ -88,17 +88,24 @@
         text-align: center;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(255, 105, 180, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         cursor: pointer;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    .product-card:hover {
-        transform: translateY(-10px) scale(1.03);
-        box-shadow: 0 15px 40px rgba(255, 105, 180, 0.4);
+    .product-card:hover, .product-card:focus-visible {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 40px rgba(255, 105, 180, 0.15);
+        outline: none;
+    }
+
+    .product-card:focus-visible {
+        ring: 3px solid var(--theme-color-primary);
+        ring-offset: 2px;
     }
 
     .product-card::before {
+
         content: "";
         position: absolute;
         inset: 0;

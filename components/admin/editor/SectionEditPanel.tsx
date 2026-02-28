@@ -7,18 +7,34 @@ import { updateSection } from "@/lib/actions";
 import type { Section } from "@/types/database";
 
 interface SectionEditPanelProps {
+  /** The section entity being edited. */
   section: Section;
 }
 
+/**
+ * Sidebar panel for editing the details of a menu section.
+ * Implements optimistic updates in the global store and debounced persistence to the database.
+ */
 export function SectionEditPanel({ section }: SectionEditPanelProps) {
   const { updateSection: storeUpdate, setSelectedSection } = useEditorStore();
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
-  useEffect(() => () => clearTimeout(saveTimer.current), []);
+  /**
+   * Cleanup the debounce timer on component unmount to prevent memory leaks or delayed errors.
+   */
+  useEffect(() => () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+  }, []);
 
+  /**
+   * Handles changes to section fields, updating the local store immediately and debouncing the database update.
+   * @param key The section property to update.
+   * @param value The new value for the property.
+   */
   function handleChange<K extends keyof Section>(key: K, value: Section[K]) {
     storeUpdate(section.id, { [key]: value } as Partial<Section>);
-    clearTimeout(saveTimer.current);
+
+    if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
       const { error } = await updateSection(section.id, {
         [key]: value,

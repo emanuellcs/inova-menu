@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { DEFAULT_THEME_CONFIG } from "@/types/database";
 import type {
   Menu,
   Section,
@@ -10,70 +9,166 @@ import type {
   ThemeConfig,
 } from "@/types/database";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
+/**
+ * Available panels in the menu editor.
+ */
 export type EditorPanel = "sections" | "theme" | "settings";
 
+/**
+ * State and actions for the menu editor.
+ * Managed via Zustand with Immer middleware for immutable updates.
+ */
 interface EditorState {
-  // The menu being edited
+  /** The menu entity currently being edited */
   menu: Menu | null;
+  /** List of sections and their nested items for the current menu */
   sections: SectionWithItems[];
 
-  // UI state
+  /** The currently active panel in the editor sidebar */
   activePanel: EditorPanel;
+  /** ID of the section currently selected for editing */
   selectedSectionId: string | null;
+  /** ID of the item currently selected for editing */
   selectedItemId: string | null;
-  isDirty: boolean; // Unsaved changes exist
+  /** Whether there are unsaved changes in the editor */
+  isDirty: boolean;
+  /** Whether a save operation is currently in progress */
   isSaving: boolean;
+  /** Whether a publish operation is currently in progress */
   isPublishing: boolean;
-  previewMode: boolean; // Toggled to see the totem preview inline
+  /** Whether the editor is in preview mode (showing the totem UI) */
+  previewMode: boolean;
 
-  // Actions — menu-level
+  /**
+   * Loads a complete menu structure into the store.
+   * @param menu The menu with all its sections and items.
+   */
   loadMenu: (menu: MenuWithSections) => void;
+  /**
+   * Updates a top-level field of the menu.
+   * @param key The field name to update.
+   * @param value The new value for the field.
+   */
   setMenuField: <K extends keyof Menu>(key: K, value: Menu[K]) => void;
+  /**
+   * Replaces the entire theme configuration.
+   * @param config The new theme configuration object.
+   */
   setThemeConfig: (config: ThemeConfig) => void;
+  /**
+   * Updates a specific category within the theme configuration.
+   * @param key The theme category key (e.g., 'colors', 'typography').
+   * @param value The new configuration for that category.
+   */
   setThemeField: <K extends keyof ThemeConfig>(
     key: K,
     value: ThemeConfig[K],
   ) => void;
 
-  // Actions — section-level
+  /**
+   * Adds a new section to the menu.
+   * @param section The section object to add.
+   */
   addSection: (section: SectionWithItems) => void;
+  /**
+   * Updates fields of an existing section.
+   * @param sectionId The ID of the section to update.
+   * @param updates Partial section object containing fields to update.
+   */
   updateSection: (sectionId: string, updates: Partial<Section>) => void;
+  /**
+   * Deletes a section from the menu.
+   * @param sectionId The ID of the section to remove.
+   */
   deleteSection: (sectionId: string) => void;
+  /**
+   * Updates the display order of sections based on an ordered list of IDs.
+   * @param orderedIds Array of section IDs in the desired order.
+   */
   reorderSections: (orderedIds: string[]) => void;
 
-  // Actions — item-level
+  /**
+   * Adds a new item to a specific section.
+   * @param sectionId The ID of the parent section.
+   * @param item The item object to add.
+   */
   addItem: (sectionId: string, item: Item) => void;
+  /**
+   * Updates fields of an existing item.
+   * @param sectionId The ID of the parent section.
+   * @param itemId The ID of the item to update.
+   * @param updates Partial item object containing fields to update.
+   */
   updateItem: (
     sectionId: string,
     itemId: string,
     updates: Partial<Item>,
   ) => void;
+  /**
+   * Deletes an item from a section.
+   * @param sectionId The ID of the parent section.
+   * @param itemId The ID of the item to remove.
+   */
   deleteItem: (sectionId: string, itemId: string) => void;
+  /**
+   * Updates the display order of items within a section.
+   * @param sectionId The ID of the section.
+   * @param orderedIds Array of item IDs in the desired order.
+   */
   reorderItems: (sectionId: string, orderedIds: string[]) => void;
+  /**
+   * Moves an item from one section to another, optionally at a specific index.
+   * @param itemId The ID of the item to move.
+   * @param fromSectionId The ID of the current parent section.
+   * @param toSectionId The ID of the target parent section.
+   * @param index Optional target index within the new section.
+   */
   moveItem: (
     itemId: string,
     fromSectionId: string,
     toSectionId: string,
+    index?: number,
   ) => void;
 
-  // Actions — UI
+  /**
+   * Switches the active editor panel.
+   * @param panel The panel to activate.
+   */
   setActivePanel: (panel: EditorPanel) => void;
+  /**
+   * Selects a section for editing.
+   * @param id The ID of the section, or null to deselect.
+   */
   setSelectedSection: (id: string | null) => void;
+  /**
+   * Selects an item for editing.
+   * @param id The ID of the item, or null to deselect.
+   */
   setSelectedItem: (id: string | null) => void;
+  /**
+   * Sets the saving state of the editor.
+   * @param v Whether the editor is currently saving.
+   */
   setIsSaving: (v: boolean) => void;
+  /**
+   * Sets the publishing state of the editor.
+   * @param v Whether the editor is currently publishing.
+   */
   setIsPublishing: (v: boolean) => void;
+  /**
+   * Toggles the totem preview mode.
+   * @param v Whether to show the preview.
+   */
   setPreviewMode: (v: boolean) => void;
+  /**
+   * Clears the dirty flag, typically after a successful save.
+   */
   markClean: () => void;
 }
 
-// ---------------------------------------------------------------------------
-// Store
-// ---------------------------------------------------------------------------
-
+/**
+ * Zustand store for managing the menu editor state.
+ */
 export const useEditorStore = create<EditorState>()(
   immer((set) => ({
     menu: null,
@@ -85,10 +180,6 @@ export const useEditorStore = create<EditorState>()(
     isSaving: false,
     isPublishing: false,
     previewMode: false,
-
-    // -------------------------------------------------------------------------
-    // Menu actions
-    // -------------------------------------------------------------------------
 
     loadMenu: (menu) =>
       set((state) => {
@@ -119,10 +210,6 @@ export const useEditorStore = create<EditorState>()(
         (state.menu.theme_config as any)[key] = value;
         state.isDirty = true;
       }),
-
-    // -------------------------------------------------------------------------
-    // Section actions
-    // -------------------------------------------------------------------------
 
     addSection: (section) =>
       set((state) => {
@@ -157,10 +244,6 @@ export const useEditorStore = create<EditorState>()(
         }));
         state.isDirty = true;
       }),
-
-    // -------------------------------------------------------------------------
-    // Item actions
-    // -------------------------------------------------------------------------
 
     addItem: (sectionId, item) =>
       set((state) => {
@@ -202,21 +285,34 @@ export const useEditorStore = create<EditorState>()(
         state.isDirty = true;
       }),
 
-    moveItem: (itemId, fromSectionId, toSectionId) =>
+    moveItem: (itemId, fromSectionId, toSectionId, index) =>
       set((state) => {
         const from = state.sections.find((s) => s.id === fromSectionId);
         const to = state.sections.find((s) => s.id === toSectionId);
         if (!from || !to) return;
-        const item = from.items.find((i) => i.id === itemId);
-        if (!item) return;
-        from.items = from.items.filter((i) => i.id !== itemId);
-        to.items.push({ ...item, section_id: toSectionId });
+
+        const itemIdx = from.items.findIndex((i) => i.id === itemId);
+        if (itemIdx === -1) return;
+
+        const [item] = from.items.splice(itemIdx, 1);
+        const updatedItem = { ...item, section_id: toSectionId };
+
+        if (typeof index === "number") {
+          to.items.splice(index, 0, updatedItem);
+        } else {
+          to.items.push(updatedItem);
+        }
+
+        // Update display_order for all items in affected sections
+        from.items.forEach((it, i) => {
+          it.display_order = i;
+        });
+        to.items.forEach((it, i) => {
+          it.display_order = i;
+        });
+
         state.isDirty = true;
       }),
-
-    // -------------------------------------------------------------------------
-    // UI actions
-    // -------------------------------------------------------------------------
 
     setActivePanel: (panel) =>
       set((state) => {

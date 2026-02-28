@@ -3,11 +3,10 @@ import { Poppins } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "@/app/globals.css";
 
-// ---------------------------------------------------------------------------
-// Font — Poppins as the default. Individual menu pages may load additional
-// fonts via a <link> injected by the ThemeProvider based on theme_config.
-// ---------------------------------------------------------------------------
-
+/**
+ * Default font configuration for the application.
+ * Poppins is used as the base font. Individual menus may load their own fonts dynamically.
+ */
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -15,10 +14,9 @@ const poppins = Poppins({
   display: "swap",
 });
 
-// ---------------------------------------------------------------------------
-// Metadata
-// ---------------------------------------------------------------------------
-
+/**
+ * Global SEO metadata configuration for the application.
+ */
 export const metadata: Metadata = {
   title: {
     template: "%s | Inova Menu",
@@ -46,17 +44,19 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Viewport configuration, optimized for totem devices and mobile screens.
+ */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Totem devices should not scale
   maximumScale: 1,
 };
 
-// ---------------------------------------------------------------------------
-// Layout
-// ---------------------------------------------------------------------------
-
+/**
+ * The root layout component shared by all pages in the application.
+ * Injects the default font, provides the main HTML structure, and includes global providers like Toaster.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -67,7 +67,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         {children}
 
-        {/* Global toast notifications — used by admin actions */}
+        {/* Global toast notification system for user feedback */}
         <Toaster
           position="top-right"
           toastOptions={{

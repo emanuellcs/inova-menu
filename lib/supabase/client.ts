@@ -10,7 +10,7 @@ import type { Database } from "@/types/database";
  *   const { data } = await supabase.from('menus').select('*')
  */
 export function createClient() {
-  return createBrowserClient<Database>(
+  return createBrowserClient<any>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );

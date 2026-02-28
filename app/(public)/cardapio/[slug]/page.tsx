@@ -7,19 +7,19 @@ import { TotemHeader } from "@/components/totem/TotemHeader";
 import { TotemNavBar } from "@/components/totem/TotemNavBar";
 import { TotemSection } from "@/components/totem/TotemSection";
 import { TotemFooter } from "@/components/totem/TotemFooter";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import { Martini } from "lucide-react";
 
 interface PageProps {
+  /** Route parameters containing the establishment slug. */
   params: Promise<{ slug: string }>;
 }
 
-// ---------------------------------------------------------------------------
-// Dynamic metadata — uses the establishment name and menu name
-// ---------------------------------------------------------------------------
-
+/**
+ * Generates dynamic SEO metadata for the public menu page.
+ * Uses the establishment name and menu details to provide relevant titles and descriptions.
+ * @param props The page properties including route parameters.
+ * @returns Metadata object for Next.js.
+ */
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
@@ -43,11 +43,12 @@ export async function generateMetadata({
   };
 }
 
-// ---------------------------------------------------------------------------
-// Data fetching — resolves slug → establishment → default published menu
-// with all sections and items in display_order
-// ---------------------------------------------------------------------------
-
+/**
+ * Resolves a public menu for an establishment based on its slug.
+ * Prioritizes the default published menu, falling back to any available published menu.
+ * @param slug The unique establishment slug from the URL.
+ * @returns The complete menu structure with sections and items, or null if not found.
+ */
 async function fetchMenu(slug: string): Promise<MenuWithSections | null> {
   const supabase = await createClient();
 
@@ -89,6 +90,11 @@ async function fetchMenu(slug: string): Promise<MenuWithSections | null> {
   return fetchMenuSections(menu as any);
 }
 
+/**
+ * Fetches and sorts sections and items for a specific menu.
+ * @param menu The menu entity to load content for.
+ * @returns The menu with hydrated and sorted sections and items.
+ */
 async function fetchMenuSections(menu: any): Promise<MenuWithSections> {
   const supabase = await createClient();
 
@@ -118,10 +124,11 @@ async function fetchMenuSections(menu: any): Promise<MenuWithSections> {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Page component — Server Component, no 'use client'
-// ---------------------------------------------------------------------------
-
+/**
+ * Public Totem Page — Server Component.
+ * Fetches the active menu for an establishment and renders the full totem UI.
+ * @param props The page properties including route parameters.
+ */
 export default async function TotemPage({ params }: PageProps) {
   const { slug } = await params;
   const menu = await fetchMenu(slug);
@@ -135,18 +142,14 @@ export default async function TotemPage({ params }: PageProps) {
 
   return (
     <TotemShell theme={theme}>
-      {/* Animated dot background pattern */}
       <div className="bg-dot-pattern" aria-hidden="true" />
 
-      {/* Header */}
       <TotemHeader theme={theme} />
 
-      {/* Navigation bar — section quick links */}
       {theme.navigation.showNavBar && visibleSections.length > 0 && (
         <TotemNavBar sections={visibleSections} theme={theme} />
       )}
 
-      {/* Main content */}
       <main
         className="relative z-10 mx-auto px-4 pb-16"
         style={{
@@ -165,7 +168,7 @@ export default async function TotemPage({ params }: PageProps) {
 
         {visibleSections.length === 0 && (
           <div className="flex flex-col items-center justify-center py-32 text-center opacity-60">
-            <span className="text-6xl mb-4">🍹</span>
+            <Martini className="w-16 h-16 mb-4" />
             <p className="text-xl font-medium">
               Nenhum item no cardápio ainda.
             </p>
@@ -173,7 +176,6 @@ export default async function TotemPage({ params }: PageProps) {
         )}
       </main>
 
-      {/* Footer */}
       <TotemFooter theme={theme} />
     </TotemShell>
   );

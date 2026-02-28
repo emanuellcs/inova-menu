@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { Menu } from "@/types/database";
 import { archiveMenu, setDefaultMenu } from "@/lib/actions";
 import { cn } from "@/lib/utils";
+import { Edit3, ExternalLink, Trash2, Check } from "lucide-react";
 
 interface MenuCardProps {
   menu: Menu;
@@ -76,24 +77,25 @@ export function MenuCard({
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl border-2 p-5 flex flex-col gap-4 transition-all duration-200",
-        "hover:shadow-md",
-        menu.is_default ? "border-[#FF69B4]" : "border-gray-100",
+        "bg-white rounded-2xl border-2 p-5 flex flex-col gap-4 transition-all duration-300",
+        "hover:shadow-md group animate-in fade-in zoom-in-95 duration-500",
+        menu.is_default ? "border-[#FF69B4]" : "border-gray-100 hover:border-pink-100",
       )}
     >
       {/* Top row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-bold text-gray-900 truncate">{menu.name}</h3>
+            <h3 className="font-bold text-gray-900 truncate group-hover:text-[#FF1493] transition-colors">{menu.name}</h3>
             {menu.is_default && (
               <span
-                className="text-xs font-semibold px-2 py-0.5 rounded-full text-white flex-shrink-0"
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white flex-shrink-0 flex items-center gap-1 shadow-sm"
                 style={{
                   background:
                     "linear-gradient(135deg, #FF69B4 0%, #FF1493 100%)",
                 }}
               >
+                <Check className="w-2.5 h-2.5" strokeWidth={3} />
                 Padrão
               </span>
             )}
@@ -106,7 +108,7 @@ export function MenuCard({
         </div>
         <span
           className={cn(
-            "text-xs font-semibold px-2.5 py-1 rounded-full border flex-shrink-0",
+            "text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border flex-shrink-0",
             status.classes,
           )}
         >
@@ -119,7 +121,7 @@ export function MenuCard({
 
       {/* Preview of primary colour */}
       <div
-        className="h-1.5 rounded-full w-full opacity-60"
+        className="h-1.5 rounded-full w-full opacity-40 group-hover:opacity-100 transition-opacity"
         style={{
           background: `linear-gradient(90deg, ${menu.theme_config?.colors?.primary ?? "#FF69B4"} 0%, ${menu.theme_config?.colors?.accent ?? "#FF1493"} 100%)`,
         }}
@@ -129,25 +131,12 @@ export function MenuCard({
       <div className="flex flex-col gap-2 pt-1">
         <Link
           href={`/admin/editor/${menu.id}`}
-          className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
+          className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-300 hover:opacity-90 active:scale-[0.98] shadow-sm shadow-pink-100"
           style={{
             background: "linear-gradient(135deg, #FF69B4 0%, #FF1493 100%)",
           }}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
+          <Edit3 className="w-4 h-4" />
           Editar cardápio
         </Link>
 
@@ -157,24 +146,10 @@ export function MenuCard({
               href={`/cardapio/${establishmentSlug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold text-gray-500 bg-gray-50 hover:bg-pink-50 hover:text-[#FF1493] transition-all duration-200"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              Ver ao vivo
+              <ExternalLink className="w-3.5 h-3.5" />
+              Ao vivo
             </a>
           )}
 
@@ -182,17 +157,18 @@ export function MenuCard({
             <button
               onClick={handleSetDefault}
               disabled={loading}
-              className="flex-1 py-2 rounded-xl text-xs font-medium text-[#FF69B4] bg-pink-50 hover:bg-pink-100 transition-colors disabled:opacity-50"
+              className="flex-1 py-2 rounded-xl text-xs font-bold text-[#FF69B4] bg-pink-50 hover:bg-pink-100 transition-colors disabled:opacity-50"
             >
-              Definir padrão
+              Padrão
             </button>
           )}
 
           <button
             onClick={handleArchive}
             disabled={loading}
-            className="flex-1 py-2 rounded-xl text-xs font-medium text-gray-400 bg-gray-50 hover:bg-red-50 hover:text-red-400 transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold text-gray-400 bg-gray-50 hover:bg-red-50 hover:text-red-500 transition-all duration-200 disabled:opacity-50"
           >
+            <Trash2 className="w-3.5 h-3.5" />
             Arquivar
           </button>
         </div>

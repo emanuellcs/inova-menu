@@ -12,10 +12,11 @@ import type {
   SectionWithItems,
 } from "@/types/database";
 
-// ---------------------------------------------------------------------------
-// Helper — get the current authenticated user or throw
-// ---------------------------------------------------------------------------
-
+/**
+ * Internal helper to ensure the user is authenticated.
+ * Throws an error if no active session is found.
+ * @returns An object containing the Supabase client and the current user.
+ */
 async function requireUser() {
   const supabase = await createClient();
   const {
@@ -26,11 +27,12 @@ async function requireUser() {
   return { supabase, user };
 }
 
-// =============================================================================
-// MENU ACTIONS
-// =============================================================================
-
-/** Creates a new draft menu for an establishment with the default theme. */
+/**
+ * Creates a new draft menu for an establishment with the default theme configuration.
+ * @param establishmentId The ID of the establishment owning the menu.
+ * @param name The display name of the menu.
+ * @returns The created menu or an error message.
+ */
 export async function createMenu(
   establishmentId: string,
   name: string,
@@ -58,7 +60,12 @@ export async function createMenu(
   }
 }
 
-/** Saves the menu's theme_config and basic fields (name, description). */
+/**
+ * Updates a menu's theme configuration and basic metadata.
+ * @param menuId The ID of the menu to update.
+ * @param updates Object containing the fields to update (name, description, theme_config).
+ * @returns An error message if the operation fails.
+ */
 export async function saveMenu(
   menuId: string,
   updates: { name?: string; description?: string; theme_config?: ThemeConfig },
@@ -79,7 +86,12 @@ export async function saveMenu(
   }
 }
 
-/** Publishes a menu: sets status to 'published' and creates a version snapshot. */
+/**
+ * Publishes a menu, making it visible to the public and creating an immutable version snapshot.
+ * @param menuId The ID of the menu to publish.
+ * @param label Optional descriptive label for this version.
+ * @returns An error message if the operation fails.
+ */
 export async function publishMenu(
   menuId: string,
   label?: string,
@@ -110,7 +122,13 @@ export async function publishMenu(
   }
 }
 
-/** Sets a menu as the default for its establishment. */
+/**
+ * Sets a specific menu as the default for its establishment.
+ * Any existing default menu for the establishment will be unset.
+ * @param menuId The ID of the menu to set as default.
+ * @param establishmentId The ID of the establishment.
+ * @returns An error message if the operation fails.
+ */
 export async function setDefaultMenu(
   menuId: string,
   establishmentId: string,
@@ -138,7 +156,11 @@ export async function setDefaultMenu(
   }
 }
 
-/** Archives a menu (soft delete). */
+/**
+ * Archives a menu (soft delete), removing it from the active dashboard.
+ * @param menuId The ID of the menu to archive.
+ * @returns An error message if the operation fails.
+ */
 export async function archiveMenu(
   menuId: string,
 ): Promise<{ error: string | null }> {
@@ -156,11 +178,13 @@ export async function archiveMenu(
   }
 }
 
-// =============================================================================
-// SECTION ACTIONS
-// =============================================================================
-
-/** Creates a new section at the end of the menu. */
+/**
+ * Creates a new section at the end of a menu.
+ * @param menuId The ID of the parent menu.
+ * @param title The title of the new section.
+ * @param currentCount Current number of sections to determine display order.
+ * @returns The created section or an error message.
+ */
 export async function createSection(
   menuId: string,
   title: string,
@@ -191,7 +215,13 @@ export async function createSection(
   }
 }
 
-/** Updates a section's fields. */
+/**
+ * Updates an existing section's fields.
+ * Automatically updates the anchor_id if the title changes.
+ * @param sectionId The ID of the section to update.
+ * @param updates Partial section object with fields to update.
+ * @returns An error message if the operation fails.
+ */
 export async function updateSection(
   sectionId: string,
   updates: Partial<Section>,
@@ -199,7 +229,6 @@ export async function updateSection(
   try {
     const { supabase } = await requireUser();
 
-    // Auto-update anchor_id if title changed
     if (updates.title) {
       updates.anchor_id = generateAnchorId(updates.title);
     }
@@ -216,7 +245,11 @@ export async function updateSection(
   }
 }
 
-/** Deletes a section and all its items (cascaded by DB). */
+/**
+ * Deletes a section and all its associated items.
+ * @param sectionId The ID of the section to delete.
+ * @returns An error message if the operation fails.
+ */
 export async function deleteSection(
   sectionId: string,
 ): Promise<{ error: string | null }> {
@@ -233,14 +266,17 @@ export async function deleteSection(
   }
 }
 
-/** Batch-updates display_order for all sections after a drag-and-drop. */
+/**
+ * Updates the display order of multiple sections simultaneously.
+ * @param updates Array of objects containing section ID and new display order.
+ * @returns An error message if the operation fails.
+ */
 export async function reorderSections(
   updates: { id: string; display_order: number }[],
 ): Promise<{ error: string | null }> {
   try {
     const { supabase } = await requireUser();
 
-    // Execute all updates in parallel
     const promises = updates.map(({ id, display_order }) =>
       supabase.from("sections").update({ display_order }).eq("id", id),
     );
@@ -254,11 +290,13 @@ export async function reorderSections(
   }
 }
 
-// =============================================================================
-// ITEM ACTIONS
-// =============================================================================
-
-/** Creates a new item in a section. */
+/**
+ * Creates a new product item within a section.
+ * @param sectionId The ID of the parent section.
+ * @param name The name of the item.
+ * @param currentCount Current number of items in the section to determine display order.
+ * @returns The created item or an error message.
+ */
 export async function createItem(
   sectionId: string,
   name: string,
@@ -293,7 +331,12 @@ export async function createItem(
   }
 }
 
-/** Updates any fields on an item. */
+/**
+ * Updates fields for a product item.
+ * @param itemId The ID of the item to update.
+ * @param updates Partial item object with fields to update.
+ * @returns An error message if the operation fails.
+ */
 export async function updateItem(
   itemId: string,
   updates: Partial<Item>,
@@ -311,7 +354,11 @@ export async function updateItem(
   }
 }
 
-/** Deletes an item. */
+/**
+ * Deletes a product item from a section.
+ * @param itemId The ID of the item to delete.
+ * @returns An error message if the operation fails.
+ */
 export async function deleteItem(
   itemId: string,
 ): Promise<{ error: string | null }> {
@@ -325,7 +372,11 @@ export async function deleteItem(
   }
 }
 
-/** Batch-updates display_order for items after drag-and-drop. */
+/**
+ * Updates the display order of multiple items simultaneously.
+ * @param updates Array of objects containing item ID and new display order.
+ * @returns An error message if the operation fails.
+ */
 export async function reorderItems(
   updates: { id: string; display_order: number }[],
 ): Promise<{ error: string | null }> {
@@ -343,11 +394,117 @@ export async function reorderItems(
   }
 }
 
-// =============================================================================
-// ESTABLISHMENT ACTIONS
-// =============================================================================
+/**
+ * Fetches the establishment details for the currently authenticated user.
+ * @returns The establishment object or an error message.
+ */
+export async function getEstablishment(): Promise<{
+  data: import("@/types/database").Establishment | null;
+  error: string | null;
+}> {
+  try {
+    const { supabase, user } = await requireUser();
 
-/** Fetches all menus for the user's first establishment. */
+    const { data: membership } = await supabase
+      .from("establishment_members")
+      .select("establishment_id, establishments(*)")
+      .eq("profile_id", user.id)
+      .not("accepted_at", "is", null)
+      .limit(1)
+      .single();
+
+    if (!membership) throw new Error("Estabelecimento não encontrado.");
+
+    return { data: (membership as any).establishments, error: null };
+  } catch (e: any) {
+    return { data: null, error: e.message };
+  }
+}
+
+/**
+ * Updates basic configuration details for an establishment.
+ * @param id The ID of the establishment.
+ * @param updates Object containing fields to update (name, slug, logo_url).
+ * @returns An error message if the operation fails.
+ */
+export async function updateEstablishment(
+  id: string,
+  updates: { name?: string; slug?: string; logo_url?: string | null },
+): Promise<{ error: string | null }> {
+  try {
+    const { supabase } = await requireUser();
+
+    if (updates.slug) {
+      updates.slug = generateSlug(updates.slug);
+    }
+
+    const { error } = await supabase
+      .from("establishments")
+      .update(updates)
+      .eq("id", id);
+
+    if (error) {
+      if (error.code === "23505") throw new Error("Este slug já está em uso.");
+      throw error;
+    }
+
+    revalidatePath("/admin/configuracoes");
+    revalidatePath("/admin/dashboard");
+    return { error: null };
+  } catch (e: any) {
+    return { error: e.message };
+  }
+}
+
+/**
+ * Uploads a file to Supabase Storage and registers it as a media asset.
+ * @param establishmentId The ID of the establishment owning the asset.
+ * @param file The file object to upload.
+ * @returns The public URL of the uploaded file or an error message.
+ */
+export async function uploadFile(
+  establishmentId: string,
+  file: File,
+): Promise<{ data: { public_url: string } | null; error: string | null }> {
+  try {
+    const { supabase, user } = await requireUser();
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `${establishmentId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("media")
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("media").getPublicUrl(filePath);
+
+    const { error: dbError } = await supabase.from("media_assets").insert({
+      establishment_id: establishmentId,
+      uploaded_by: user.id,
+      storage_path: filePath,
+      public_url: publicUrl,
+      file_name: file.name,
+      mime_type: file.type,
+      file_size_bytes: file.size,
+    });
+
+    if (dbError) throw dbError;
+
+    return { data: { public_url: publicUrl }, error: null };
+  } catch (e: any) {
+    return { data: null, error: e.message };
+  }
+}
+
+/**
+ * Fetches all non-archived menus associated with the user's primary establishment.
+ * @returns An object containing the establishment ID, slug, and menu list.
+ */
 export async function getEstablishmentMenus(): Promise<{
   data: { establishmentId: string; slug: string; menus: Menu[] } | null;
   error: string | null;
@@ -355,7 +512,6 @@ export async function getEstablishmentMenus(): Promise<{
   try {
     const { supabase, user } = await requireUser();
 
-    // Get the user's establishment via membership
     const { data: membership } = await supabase
       .from("establishment_members")
       .select("establishment_id, establishments(*)")
@@ -388,7 +544,11 @@ export async function getEstablishmentMenus(): Promise<{
   }
 }
 
-/** Fetches a single menu with all sections and items for the editor. */
+/**
+ * Fetches a single menu with all its sections and items, ordered for display.
+ * @param menuId The ID of the menu to fetch.
+ * @returns The complete menu structure or an error message.
+ */
 export async function getMenuForEditor(menuId: string): Promise<{
   data: import("@/types/database").MenuWithSections | null;
   error: string | null;
@@ -429,7 +589,10 @@ export async function getMenuForEditor(menuId: string): Promise<{
   }
 }
 
-/** Signs the user out. */
+/**
+ * Terminates the current user session.
+ * @returns An error message if the operation fails.
+ */
 export async function signOut(): Promise<{ error: string | null }> {
   try {
     const { supabase } = await requireUser();

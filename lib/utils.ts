@@ -2,32 +2,20 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { ThemeConfig } from "@/types/database";
 
-// ---------------------------------------------------------------------------
-// cn — Tailwind class merging utility
-// ---------------------------------------------------------------------------
-
 /**
- * Merges Tailwind CSS class names, resolving conflicts intelligently.
- * Combines clsx (conditional classes) with tailwind-merge (conflict resolution).
- *
- * Usage:
- *   cn('px-4 py-2', isActive && 'bg-pink-500', className)
+ * Utility for merging Tailwind CSS class names.
+ * Combines clsx for conditional classes and tailwind-merge for intelligent conflict resolution.
+ * @param inputs Array of class values to merge.
+ * @returns A single string of merged class names.
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// ---------------------------------------------------------------------------
-// formatPrice — localised Brazilian Real formatting
-// ---------------------------------------------------------------------------
-
 /**
- * Formats a numeric price to Brazilian Real (BRL) currency string.
- * Returns null if price is null (product has no displayed price).
- *
- * Usage:
- *   formatPrice(29.90) // → "R$ 29,90"
- *   formatPrice(null)  // → null
+ * Formats a numeric price into a Brazilian Real (BRL) currency string.
+ * @param price The numeric price to format, or null.
+ * @returns A formatted currency string (e.g., "R$ 29,90") or null if the input is null.
  */
 export function formatPrice(price: number | null): string | null {
   if (price === null) return null;
@@ -37,18 +25,11 @@ export function formatPrice(price: number | null): string | null {
   }).format(price);
 }
 
-// ---------------------------------------------------------------------------
-// buildCssVariables — converts ThemeConfig into CSS custom properties
-// ---------------------------------------------------------------------------
-
 /**
- * Converts a ThemeConfig object into a React CSSProperties object
- * containing CSS custom properties. Applied to a wrapper <div> so all
- * child components can consume the theme via `var(--theme-*)`.
- *
- * Usage (Totem page):
- *   const cssVars = buildCssVariables(menu.theme_config)
- *   <div style={cssVars}>...</div>
+ * Converts a theme configuration into a set of CSS custom properties (variables).
+ * These variables are used by components to apply dynamic styling based on the user's theme.
+ * @param theme The full theme configuration object.
+ * @returns A React CSSProperties object containing the mapped CSS variables.
  */
 export function buildCssVariables(theme: ThemeConfig): React.CSSProperties {
   return {
@@ -71,13 +52,11 @@ export function buildCssVariables(theme: ThemeConfig): React.CSSProperties {
   } as React.CSSProperties;
 }
 
-// ---------------------------------------------------------------------------
-// buildBackgroundStyle — converts ThemeBackground into inline style
-// ---------------------------------------------------------------------------
-
 /**
- * Returns an inline background style object from the theme background config.
- * Handles gradient, solid colour, and image backgrounds.
+ * Generates an inline background style based on the theme background configuration.
+ * Supports solid colors, linear gradients, and background images.
+ * @param bg The theme's background configuration.
+ * @returns A React CSSProperties object for the background style.
  */
 export function buildBackgroundStyle(
   bg: ThemeConfig["background"],
@@ -100,15 +79,11 @@ export function buildBackgroundStyle(
   }
 }
 
-// ---------------------------------------------------------------------------
-// generateAnchorId — derives a URL-safe anchor ID from a section title
-// ---------------------------------------------------------------------------
-
 /**
- * Converts a section title into a URL-safe anchor ID.
- *
- * Usage:
- *   generateAnchorId("ESTAÇÃO GIN") // → "estacao-gin"
+ * Converts a plain text title into a URL-safe anchor ID.
+ * Normalizes characters by removing diacritics and replacing spaces with hyphens.
+ * @param title The source string to convert.
+ * @returns A URL-safe, lowercase anchor ID.
  */
 export function generateAnchorId(title: string): string {
   return title
@@ -120,15 +95,11 @@ export function generateAnchorId(title: string): string {
     .replace(/\s+/g, "-");
 }
 
-// ---------------------------------------------------------------------------
-// generateSlug — derives a unique URL slug from an establishment name
-// ---------------------------------------------------------------------------
-
 /**
- * Converts an establishment name into a URL-safe slug.
- *
- * Usage:
- *   generateSlug("Inova Drinks Bar") // → "inova-drinks-bar"
+ * Converts a string (typically an establishment name) into a unique URL slug.
+ * Ensures the result is lowercase, URL-safe, and contains only single hyphens.
+ * @param name The source name to slugify.
+ * @returns A URL-safe slug.
  */
 export function generateSlug(name: string): string {
   return name
@@ -141,10 +112,12 @@ export function generateSlug(name: string): string {
     .replace(/-+/g, "-");
 }
 
-// ---------------------------------------------------------------------------
-// truncate — truncates a string to a max length with ellipsis
-// ---------------------------------------------------------------------------
-
+/**
+ * Truncates a string to a specified maximum length, adding an ellipsis if necessary.
+ * @param str The string to truncate.
+ * @param maxLength The maximum allowed length.
+ * @returns The truncated string with an ellipsis, or the original string if within the limit.
+ */
 export function truncate(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
   return str.slice(0, maxLength).trimEnd() + "…";
